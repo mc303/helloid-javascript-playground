@@ -1,6 +1,18 @@
 # HelloID JavaScript Playground
 
-A web-based JavaScript playground for exploring and scripting against employee/contract data structures. This tool provides an interactive environment for HR data analysis, script development, and learning how to work with complex employee data.
+A specialized development tool for creating and debugging JavaScript mapping scripts used in HelloID PowerShell v2 target systems. This playground provides an interactive environment for developing complex target mappings that transform employee/contract data during identity provisioning workflows.
+
+## About HelloID Target Mappings
+
+HelloID uses JavaScript-based transformation scripts (ECMAScript 5.1) to process user attributes during identity provisioning. These mapping scripts:
+
+- Transform and format user attributes dynamically
+- Generate unique usernames based on employee information  
+- Access person data through the `Person` object structure
+- Handle data validation, cleanup, and formatting
+- Support complex logic for account creation across different target systems
+
+This playground replicates the HelloID mapping script environment, allowing you to develop and test your transformation logic before deploying to production.
 
 ## Features
 
@@ -41,6 +53,64 @@ A web-based JavaScript playground for exploring and scripting against employee/c
    - View output in the dedicated execution output panel
    - Use "Clear" button to clear output results
    - Click "JSON" to inspect the raw person data in a modal
+
+## HelloID Mapping Script Examples
+
+### Basic Username Generation
+```javascript
+// Generate username from person data
+var username = '';
+if (Person.Name.GivenName && Person.Name.FamilyName) {
+    username = Person.Name.GivenName.toLowerCase() + '.' + Person.Name.FamilyName.toLowerCase();
+    // Remove diacritical marks and special characters
+    username = username.replace(/[^a-z0-9.]/g, '');
+    // Truncate to 20 characters
+    if (username.length > 20) {
+        username = username.substring(0, 20);
+    }
+}
+return username;
+```
+
+### Complex Data Transformation
+```javascript
+// Build user attributes object for target system
+var userAttributes = {
+    DisplayName: Person.DisplayName,
+    Department: Person.PrimaryContract.Department.DisplayName,
+    Title: Person.PrimaryContract.Title.Name,
+    Manager: Person.PrimaryManager.DisplayName || 'No Manager',
+    Location: Person.Location.Name,
+    Email: Person.Contact.Business.Email || Person.Contact.Personal.Email
+};
+
+// Handle missing or null values
+Object.keys(userAttributes).forEach(function(key) {
+    if (!userAttributes[key]) {
+        userAttributes[key] = '';
+    }
+});
+
+return userAttributes;
+```
+
+### Contract Validation
+```javascript
+// Check contract validity and generate account status
+var today = new Date();
+var contractEnd = new Date(Person.PrimaryContract.EndDate);
+var daysUntilExpiry = Math.ceil((contractEnd - today) / (1000 * 60 * 60 * 24));
+
+var accountStatus = {
+    isActive: !Person.PrimaryContract.Context.InConditions && daysUntilExpiry > 0,
+    expirationDate: Person.PrimaryContract.EndDate,
+    daysUntilExpiry: daysUntilExpiry,
+    contractType: Person.PrimaryContract.Type.Description || 'Unknown'
+};
+
+console.log('Account Status:', JSON.stringify(accountStatus, null, 2));
+return accountStatus;
+```
 
 ## Data Structure
 
@@ -131,19 +201,40 @@ helloid-javascript-test/
 
 ## Use Cases
 
-- **HR Data Analysis** - Explore employee data and generate reports
-- **Script Development** - Prototype JavaScript for HR systems
-- **Learning** - Understand complex nested data structures
-- **Data Validation** - Test data integrity and completeness
-- **Reporting** - Create custom employee reports and summaries
+- **HelloID Mapping Script Development** - Create and test complex target mapping scripts for identity provisioning
+- **Username Generation Logic** - Develop algorithms for generating unique usernames from person data
+- **Data Transformation Testing** - Validate scripts handle missing data, special characters, and formatting requirements
+- **Debugging Complex Mappings** - Interactive exploration of Person object properties and nested data structures
+- **Script Optimization** - Test performance and edge cases before production deployment
+- **Learning HelloID Scripting** - Understand Person object structure and available properties
+- **Prototype New Mappings** - Experiment with transformation logic for new target systems
+
+## HelloID Integration
+
+When your mapping scripts are ready:
+
+1. **Copy Script Logic** - Transfer your tested JavaScript code to HelloID target system mappings
+2. **Verify Person Properties** - Ensure all Person object properties used exist in your HelloID environment
+3. **Test with Real Data** - Use HelloID's preview functionality to validate with actual employee data
+4. **Deploy Gradually** - Test mappings on a small user subset before full deployment
+
+## Best Practices for HelloID Mapping Scripts
+
+- **Handle Null Values** - Always check for undefined or null Person properties
+- **Validate Data Types** - Ensure expected data types before string operations
+- **Keep Scripts Efficient** - Avoid complex loops; mapping scripts run for every user
+- **Use Consistent Naming** - Follow your organization's username/attribute conventions
+- **Test Edge Cases** - Verify behavior with missing names, special characters, long strings
+- **Document Logic** - Comment complex transformation rules for future maintenance
 
 ## Contributing
 
-This is a development tool for exploring HR data structures. Feel free to:
-- Add new sample data
-- Enhance the IntelliSense capabilities
-- Add utility functions for common operations
-- Improve the user interface
+This tool is designed for HelloID administrators and developers. Contributions welcome:
+- Add new sample HR data scenarios
+- Enhance IntelliSense for HelloID-specific properties  
+- Add utility functions for common mapping operations
+- Improve debugging capabilities
+- Add more HelloID mapping script examples
 
 ## License
 
