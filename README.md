@@ -1,4 +1,4 @@
-# JavaScript HR Data Playground
+# HeeloID JavaScript Playground
 
 A web-based JavaScript playground for exploring and scripting against employee/contract data structures. This tool provides an interactive environment for HR data analysis, script development, and learning how to work with complex employee data.
 
@@ -126,8 +126,7 @@ console.log(`Business Phone: ${business.Phone.Mobile}`);
 helloid-javascript-test/
 ├── index.html          # Main application file
 ├── vault.json          # Sample HR data
-├── README.md           # This file
-└── *.png              # Screenshot examples
+└── README.md           # This file
 ```
 
 ## Use Cases
