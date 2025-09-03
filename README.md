@@ -1,4 +1,4 @@
-# HeeloID JavaScript Playground
+# HelloID JavaScript Playground
 
 A web-based JavaScript playground for exploring and scripting against employee/contract data structures. This tool provides an interactive environment for HR data analysis, script development, and learning how to work with complex employee data.
 
