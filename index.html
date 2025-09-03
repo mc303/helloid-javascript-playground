@@ -1,0 +1,905 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>JavaScript Playground</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.33.0/min/vs/loader.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'inter': ['Inter', 'sans-serif'],
+                        'mono': ['JetBrains Mono', 'monospace'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .animate-gradient {
+            background-size: 200% 200%;
+            animation: gradient 3s ease infinite;
+        }
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        .glass {
+            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.8);
+        }
+        /* Dropdown portal styling */
+        .dropdown-portal {
+            position: fixed;
+            z-index: 999999;
+            pointer-events: none;
+        }
+        .dropdown-portal.active {
+            pointer-events: auto;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-slate-50 to-blue-50 font-inter h-screen overflow-hidden">
+    <div class="flex flex-col h-full">
+        <div id="header-section" class="bg-white/80 backdrop-blur-sm shadow-lg border-b border-gray-200/50 px-4 py-3">
+            <div class="flex items-center justify-between">
+                <!-- Left: Title Section -->
+                <div class="flex items-center space-x-3">
+                    <div class="w-6 h-6 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+                        <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path>
+                        </svg>
+                    </div>
+                    <h1 class="text-xl md:text-2xl font-bold bg-gradient-to-r from-gray-800 to-blue-600 bg-clip-text text-transparent">JavaScript Playground</h1>
+                </div>
+                
+                <!-- Center: Controls Section -->
+                <div class="absolute left-1/2 transform -translate-x-1/2 flex items-center space-x-3">
+                    <!-- Load Data -->
+                    <div class="flex items-center space-x-2">
+                        <input type="file" id="file-input" class="hidden">
+                        <label for="file-input" class="cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors px-4 py-2 text-xs text-gray-600 border border-gray-300 rounded-lg flex items-center space-x-2" style="min-width: 120px;">
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                            </svg>
+                            <span>Choose File</span>
+                        </label>
+                        <button id="load-button" class="bg-gradient-to-r from-blue-500 to-indigo-600 text-white px-3 py-2 text-xs font-medium rounded-lg shadow flex items-center space-x-1">
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path>
+                            </svg>
+                            <span>Load</span>
+                        </button>
+                    </div>
+                    <!-- Employee Search -->
+                    <div class="relative">
+                        <input type="text" id="person-search" placeholder="Select employee..." class="pl-3 pr-8 py-2 text-sm border border-gray-200 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-transparent rounded-lg transition-all duration-200" style="width: 400px;">
+                        <input type="hidden" id="person-index">
+                        <button id="clear-search-button" class="absolute inset-y-0 right-6 flex items-center hidden hover:text-red-500 transition-colors">
+                            <svg class="h-3 w-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
+                        <div class="absolute inset-y-0 right-2 flex items-center pointer-events-none">
+                            <svg class="h-3 w-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </div>
+                    </div>
+                    <!-- JSON Button -->
+                    <button id="show-json-button" class="bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-medium px-4 py-2 rounded-lg shadow disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-1" disabled>
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                        <span class="text-xs">JSON</span>
+                    </button>
+                </div>
+                
+                <!-- Right: Empty spacer -->
+                <div></div>
+        </div>
+        
+        
+        <div class="flex-1 flex p-4 space-x-4" style="min-height: calc(100vh - 100px);">
+            <div class="flex-1 bg-white rounded-2xl shadow-lg border border-gray-200/50 overflow-hidden flex flex-col" style="min-height: 500px;">
+                <div class="bg-gradient-to-r from-gray-50 to-blue-50 px-4 py-3 border-b border-gray-200/50 flex-shrink-0">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-2">
+                            <div class="flex space-x-1">
+                                <div class="w-3 h-3 bg-red-400 rounded-full"></div>
+                                <div class="w-3 h-3 bg-yellow-400 rounded-full"></div>
+                                <div class="w-3 h-3 bg-green-400 rounded-full"></div>
+                            </div>
+                            <span class="text-sm font-medium text-gray-600 ml-2">JavaScript Editor</span>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <button id="run-button" class="bg-gradient-to-r from-emerald-500 to-green-600 text-white font-medium px-3 py-1.5 rounded-lg shadow disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-1 text-xs" disabled>
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1m4 0h1m-6 4h2m4 0h2M7 7h10a2 2 0 012 2v8a2 2 0 01-2 2H7a2 2 0 01-2-2V9a2 2 0 012-2z"></path>
+                                </svg>
+                                <span>Execute</span>
+                            </button>
+                            <div class="text-xs text-gray-500">Monaco Editor</div>
+                        </div>
+                    </div>
+                </div>
+                <div id="editor" class="flex-1" style="min-height: 400px;"></div>
+            </div>
+            <div class="flex-1 bg-white rounded-2xl shadow-lg border border-gray-200/50 flex flex-col" style="min-height: 500px;">
+                <div class="bg-gradient-to-r from-gray-50 to-green-50 px-4 py-3 border-b border-gray-200/50 flex-shrink-0">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-2">
+                            <svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"></path>
+                            </svg>
+                            <h2 class="text-lg font-bold text-gray-800">Execution Output</h2>
+                        </div>
+                        <button id="clear-output-button" class="bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-medium px-3 py-1.5 rounded-lg shadow flex items-center space-x-1 text-xs transition-colors">
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                            </svg>
+                            <span>Clear</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="flex-1 p-4" style="min-height: 400px;">
+                    <textarea 
+                        id="output" 
+                        readonly 
+                        class="w-full h-full resize-none text-sm text-gray-700 font-mono leading-relaxed bg-transparent border-none focus:outline-none"
+                        placeholder="Execution results will appear here..."
+                    ></textarea>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="json-modal" class="fixed z-50 inset-0 overflow-y-auto hidden">
+        <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center">
+            <div class="fixed inset-0 transition-opacity backdrop-blur-sm" aria-hidden="true">
+                <div class="absolute inset-0 bg-gray-900/50"></div>
+            </div>
+            <div class="relative inline-block bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-4 sm:max-w-5xl sm:w-full h-[85vh] flex flex-col">
+                <div class="bg-gradient-to-r from-blue-50 to-indigo-50 px-6 py-4 border-b border-gray-200/50">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center">
+                                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                </svg>
+                            </div>
+                            <h3 class="text-xl font-bold text-gray-900" id="modal-title">Employee Data (JSON)</h3>
+                        </div>
+                        <button type="button" id="close-button" class="group bg-red-500 hover:bg-red-600 text-white rounded-lg p-2 transition-all duration-200 transform hover:scale-105">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                <div class="flex-1 p-6">
+                    <div class="h-full bg-gray-50 rounded-xl border-2 border-gray-200">
+                        <textarea id="json-output" readonly class="w-full h-full text-sm text-gray-700 bg-transparent border-none focus:outline-none resize-none font-mono p-4 leading-relaxed"></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // WARNING: This playground executes arbitrary JavaScript using new Function. Do not use with untrusted code!
+
+        var vaultData;
+        var editor;
+        var completionProvider;
+        var isSelected = false;
+
+        var output = document.getElementById('output');
+        var personSearch = document.getElementById('person-search');
+        var personIndexInput = document.getElementById('person-index');
+        // Create dropdown as a portal outside the container hierarchy
+        var personOptions = document.createElement('div');
+        personOptions.id = 'person-options';
+        personOptions.className = 'dropdown-portal bg-white/95 backdrop-blur-sm shadow-2xl max-h-60 rounded-xl py-2 text-sm border border-gray-200/50 overflow-auto focus:outline-none';
+        personOptions.style.display = 'none';
+        document.body.appendChild(personOptions);
+        var clearSearchButton = document.getElementById('clear-search-button');
+        var runButton = document.getElementById('run-button');
+        var loadButton = document.getElementById('load-button');
+        var fileInput = document.getElementById('file-input');
+        var showJsonButton = document.getElementById('show-json-button');
+        var jsonModal = document.getElementById('json-modal');
+        var closeButton = document.getElementById('close-button');
+        var jsonOutput = document.getElementById('json-output');
+        var clearOutputButton = document.getElementById('clear-output-button');
+
+        function enableButtons(enabled) {
+            runButton.disabled = !enabled;
+            showJsonButton.disabled = !enabled;
+        }
+
+        require.config({ paths: { 'vs': 'https://cdn.jsdelivr.net/npm/monaco-editor@0.33.0/min/vs' } });
+        require(['vs/editor/editor.main'], function () {
+            editor = monaco.editor.create(document.getElementById('editor'), {
+                value: '// Paste your javascript code here',
+                language: 'javascript',
+                theme: 'vs-dark',
+                // Keep quickSuggestions enabled but only for our custom provider
+                quickSuggestions: { other: true, comments: false, strings: false },
+                // Enable suggestions on trigger characters (like '.') for our custom provider
+                suggestOnTriggerCharacters: true,
+                acceptSuggestionOnEnter: 'on',
+                tabCompletion: 'on',
+                // Enable word-based suggestions for JavaScript keywords
+                wordBasedSuggestions: 'currentDocument',
+                // Disable parameter hints
+                parameterHints: { enabled: false },
+                // Disable hover
+                hover: { enabled: false },
+                // Disable signature help
+                signatureHelp: { enabled: false }
+            });
+            
+            // Disable all TypeScript/JavaScript language services to prevent interference
+            monaco.languages.typescript.javascriptDefaults.setDiagnosticsOptions({
+                noSemanticValidation: true,
+                noSyntaxValidation: true, 
+                noSuggestionDiagnostics: true
+            });
+            
+            // Completely disable the TypeScript/JavaScript language worker
+            monaco.languages.typescript.javascriptDefaults.setCompilerOptions({
+                allowNonTsExtensions: true,
+                noLib: true,
+                allowJs: false,
+                checkJs: false
+            });
+            
+            window.addEventListener('resize', function() {
+                if (editor) {
+                    editor.layout();
+                }
+            });
+
+            // Automatically load vault.json content
+            vaultData = JSON.parse(`{
+  "Persons": [
+    {
+      "Contracts": [
+        {
+          "Context": {
+            "InConditions": false
+          },
+          "ExternalId": "C-95652783",
+          "StartDate": "2020-09-14T00:00:00Z",
+          "EndDate": "2025-11-10T00:00:00Z",
+          "Type": {
+            "Code": null,
+            "Description": null
+          },
+          "Details": {
+            "Fte": 1.0,
+            "HoursPerWeek": 40,
+            "Percentage": 100,
+            "Sequence": 1
+          },
+          "Location": {
+            "ExternalId": "loc-004",
+            "Code": "MAAT",
+            "Name": "Est"
+          },
+          "CostCenter": {
+            "ExternalId": "cc-002",
+            "Code": "ZUID",
+            "Name": "incentivize mission-critical channels"
+          },
+          "CostBearer": {
+            "ExternalId": null,
+            "Code": null,
+            "Name": null
+          },
+          "Employer": {
+            "ExternalId": "emp-001",
+            "Code": "ZOALS",
+            "Name": "Koninklijke Maas"
+          },
+          "Manager": {
+            "PersonId": "00000000-0000-0000-0000-000000000000",
+            "ExternalId": null,
+            "DisplayName": null,
+            "Email": null
+          },
+          "Team": {
+            "ExternalId": "team-017",
+            "Code": "KIST",
+            "Name": "Devolved human-resource instruction set"
+          },
+          "Department": {
+            "DepartmentVersion": "v1",
+            "DisplayName": "Emergency planning/management officer",
+            "ExternalId": "dept-008",
+            "Code": "POSTZEGEL",
+            "ParentExternalId": "dept-007",
+            "Manager": {
+              "PersonId": "030cacaf-f551-438d-a6e2-6f9ede0adf50",
+              "ExternalId": "610105"
+            }
+          },
+          "Division": {
+            "ExternalId": null,
+            "Code": null,
+            "Name": null
+          },
+          "Title": {
+            "ExternalId": "title-CEO",
+            "Code": "CEO",
+            "Name": "CEO"
+          },
+          "Organization": {
+            "ExternalId": null,
+            "Code": null,
+            "Name": null
+          },
+          "Custom": {
+            "Laptop": "Nee",
+            "SoortDienstverband": "Onbepaalde tijd",
+            "StandplaatsNaam": "Utrecht",
+            "Telefoon": "Ja",
+            "ProjectCode": "PROJ-1455"
+          }
+        }
+      ],
+      "PrimaryContract": {
+        "Context": {
+          "InConditions": false
+        },
+        "ExternalId": "C-95652783",
+        "StartDate": "2020-09-14T00:00:00Z",
+        "EndDate": "2025-11-10T00:00:00Z",
+        "Type": {
+          "Code": null,
+          "Description": null
+        },
+        "Details": {
+          "Fte": 1.0,
+          "HoursPerWeek": 40,
+          "Percentage": 100,
+          "Sequence": 1
+        },
+        "Location": {
+          "ExternalId": "loc-004",
+          "Code": "MAAT",
+          "Name": "Est"
+        },
+        "CostCenter": {
+          "ExternalId": "cc-002",
+          "Code": "ZUID",
+          "Name": "incentivize mission-critical channels"
+        },
+        "CostBearer": {
+          "ExternalId": null,
+          "Code": null,
+          "Name": null
+        },
+        "Employer": {
+          "ExternalId": "emp-001",
+          "Code": "ZOALS",
+          "Name": "Koninklijke Maas"
+        },
+        "Manager": {
+          "PersonId": "00000000-0000-0000-0000-000000000000",
+          "ExternalId": null,
+          "DisplayName": null,
+          "Email": null
+        },
+        "Team": {
+          "ExternalId": "team-017",
+          "Code": "KIST",
+          "Name": "Devolved human-resource instruction set"
+        },
+        "Department": {
+          "DepartmentVersion": "v1",
+          "DisplayName": "Emergency planning/management officer",
+          "ExternalId": "dept-008",
+          "Code": "POSTZEGEL",
+          "ParentExternalId": "dept-007",
+          "Manager": {
+            "PersonId": "00000000-0000-0000-0000-000000000000",
+            "ExternalId": ""
+          }
+        },
+        "Division": {
+          "ExternalId": null,
+          "Code": null,
+          "Name": null
+        },
+        "Title": {
+          "ExternalId": "title-CEO",
+            "Code": "CEO",
+            "Name": "CEO"
+          },
+          "Organization": {
+            "ExternalId": null,
+            "Code": null,
+            "Name": null
+          },
+          "Custom": {
+            "Laptop": "Nee",
+            "SoortDienstverband": "Onbepaalde tijd",
+            "StandplaatsNaam": "Utrecht",
+            "Telefoon": "Ja",
+            "ProjectCode": "PROJ-1455"
+          }
+        },
+        "PersonId": "bb901795-69c9-4ad5-b206-3661efcada82",
+        "PersonVersion": "v1",
+        "DisplayName": "Koen van der de Keijser (649532)",
+        "ExternalId": "649532",
+        "UserName": "koen_de_keijser",
+        "Location": {
+          "ExternalId": "loc-005",
+          "Code": "VIERKANT",
+          "Name": "Ootmarsum"
+        },
+        "Details": {
+          "Gender": "X",
+          "HonorificPrefix": null,
+          "HonorificSuffix": null,
+          "BirthDate": "1999-12-13T00:00:00Z",
+          "BirthLocality": "Angerlo",
+          "MaritalStatus": "Divorced"
+        },
+        "Name": {
+          "Initials": "K.",
+          "GivenName": "Koen",
+          "NickName": "Koen",
+          "FamilyName": "de Keijser",
+          "FamilyNamePrefix": "van der",
+          "FamilyNamePartner": null,
+          "FamilyNamePartnerPrefix": null,
+          "Convention": "B"
+        },
+        "Status": {
+          "Blocked": false,
+          "Reason": null
+        },
+        "Contact": {
+          "Personal": {
+            "Address": {
+              "Street": "Isabelpad",
+              "HouseNumber": "130",
+              "PostalCode": "3107 QM",
+              "Locality": "Lopik",
+              "Country": "Noordelijke Marianen"
+            },
+            "Phone": {
+              "Mobile": "(0498) 597421",
+              "Fixed": "057-9563573"
+            },
+            "Email": "danique49@example.org"
+          },
+          "Business": {
+            "Address": {},
+            "Phone": {
+              "Mobile": "034-5698745",
+              "Fixed": "+31(0)610 876406"
+            },
+            "Email": "yjonkman@koninklijke.com"
+          }
+        },
+        "Excluded": false,
+        "ExclusionDetails": {
+          "Hr": false,
+          "Manual": false
+        },
+        "PrimaryManager": {
+          "PersonId": "00000000-0000-0000-0000-000000000000",
+          "ExternalId": null,
+          "DisplayName": null,
+          "Email": null
+        },
+        "Source": {
+          "SystemId": "36c440ef-a8e5-4686-9abd-8c45125cdd09",
+          "DisplayName": "HR generator"
+        },
+        "Custom": {
+          "MobileFromADUser": "043-1173545",
+          "EmployeeType": "Full-time"
+        }
+      }
+  ],
+  "Departments": [
+    {
+      "DepartmentVersion": "v1",
+      "DisplayName": "Executive Board",
+      "ExternalId": "dept-001",
+      "Code": "EXEC",
+      "ParentExternalId": "",
+      "Manager": {
+        "PersonId": "f20d3b7c-deb2-43ca-87a9-1b2bc108dbeb",
+        "ExternalId": "525050"
+      }
+    }
+  ]
+}
+`);
+            vaultData.Persons.sort(function(a, b) {
+                return a.DisplayName.localeCompare(b.DisplayName);
+            });
+            populatePersonOptions();
+        });
+
+        loadButton.addEventListener('click', function() {
+            if (fileInput.files.length === 0) {
+                alert('Please select a vault.json file');
+                return;
+            }
+            var file = fileInput.files[0];
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    vaultData = JSON.parse(e.target.result);
+                    vaultData.Persons.sort(function(a, b) {
+                        return a.DisplayName.localeCompare(b.DisplayName);
+                    });
+                    populatePersonOptions();
+                } catch (err) {
+                    alert('Error parsing JSON file: ' + err.message);
+                }
+            };
+            reader.readAsText(file);
+        });
+
+        function populatePersonOptions(filter) {
+            personOptions.innerHTML = '';
+            var filteredPersons = vaultData.Persons;
+            if (filter) {
+                filteredPersons = vaultData.Persons.filter(function(person) {
+                    return person.DisplayName.toLowerCase().includes(filter.toLowerCase());
+                });
+            }
+
+            filteredPersons.forEach(function(person) {
+                var option = document.createElement('div');
+                option.classList.add('cursor-pointer', 'px-4', 'py-2.5', 'hover:bg-blue-50', 'hover:text-blue-700', 'transition-colors', 'duration-150', 'text-sm', 'text-gray-700', 'flex', 'items-center', 'space-x-2');
+                
+                // Add icon and text
+                option.innerHTML = '<svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg><span>' + person.DisplayName + '</span>';
+                option.addEventListener('click', function() {
+                    personSearch.value = person.DisplayName;
+                    personIndexInput.value = vaultData.Persons.indexOf(person);
+                    personOptions.style.display = 'none';
+                    personOptions.classList.remove('active');
+                    setupCodeCompletion(person);
+                    isSelected = true;
+                    clearSearchButton.classList.remove('hidden');
+                    enableButtons(true);
+                });
+                personOptions.appendChild(option);
+            });
+
+            // If nothing is selected, pick first
+            if ((!personIndexInput.value || isNaN(personIndexInput.value)) && filteredPersons.length > 0 && !filter) {
+                var person = filteredPersons[0];
+                personSearch.value = person.DisplayName;
+                personIndexInput.value = vaultData.Persons.indexOf(person);
+                setupCodeCompletion(person);
+                isSelected = true;
+                clearSearchButton.classList.remove('hidden');
+                enableButtons(true);
+            }
+            if (filteredPersons.length === 0) {
+                enableButtons(false);
+            }
+        }
+
+        personSearch.addEventListener('keydown', function() {
+            if (isSelected) {
+                personSearch.value = '';
+                isSelected = false;
+            }
+        });
+
+        personSearch.addEventListener('input', function() {
+            populatePersonOptions(personSearch.value);
+            if (personSearch.value) {
+                clearSearchButton.classList.remove('hidden');
+            } else {
+                clearSearchButton.classList.add('hidden');
+            }
+        });
+
+        clearSearchButton.addEventListener('mousedown', function(e) {
+            e.preventDefault();
+            personSearch.value = '';
+            clearSearchButton.classList.add('hidden');
+            populatePersonOptions();
+        });
+
+        personSearch.addEventListener('focus', function() {
+            // Position the dropdown relative to the input field
+            var inputRect = personSearch.getBoundingClientRect();
+            personOptions.style.top = (inputRect.bottom + 8) + 'px';
+            personOptions.style.left = inputRect.left + 'px';
+            personOptions.style.width = inputRect.width  + 'px';
+            personOptions.style.display = 'block';
+            personOptions.classList.add('active');
+        });
+
+        personSearch.addEventListener('blur', function() {
+            setTimeout(function() {
+                personOptions.style.display = 'none';
+                personOptions.classList.remove('active');
+            }, 200);
+        });
+
+        // Reposition dropdown on window resize or scroll
+        function repositionDropdown() {
+            if (personOptions.style.display === 'block') {
+                var inputRect = personSearch.getBoundingClientRect();
+                personOptions.style.top = (inputRect.bottom + 8) + 'px';
+                personOptions.style.left = inputRect.left + 'px';
+                personOptions.style.width = inputRect.width + 'px';
+            }
+        }
+        
+        window.addEventListener('resize', repositionDropdown);
+        window.addEventListener('scroll', repositionDropdown);
+
+        function setupCodeCompletion(person) {
+            console.log('setupCodeCompletion called with person:', person); // Log the person object
+            if (completionProvider) {
+                completionProvider.dispose();
+            }
+            
+            // Create a higher priority completion provider that completely overrides default completion
+            completionProvider = monaco.languages.registerCompletionItemProvider('javascript', {
+                triggerCharacters: ['.', 'P'], // Trigger completion when a dot or P is typed
+                provideCompletionItems: function(model, position) {
+                    console.log('provideCompletionItems called.');
+                    var textUntilPosition = model.getValueInRange({
+                        startLineNumber: 1,
+                        startColumn: 1,
+                        endLineNumber: position.lineNumber,
+                        endColumn: position.column
+                    });
+                    console.log('textUntilPosition:', textUntilPosition);
+
+                    // Get the word at the current position
+                    var word = model.getWordUntilPosition(position);
+                    console.log('word:', word);
+                    
+                    // Calculate the proper range for completion
+                    var range = {
+                        startLineNumber: position.lineNumber,
+                        endLineNumber: position.lineNumber,
+                        startColumn: word.startColumn,
+                        endColumn: word.endColumn
+                    };
+
+                    // Get the character before the current position
+                    var charBeforeCursor = '';
+                    if (position.column > 1) {
+                        charBeforeCursor = model.getValueInRange({
+                            startLineNumber: position.lineNumber,
+                            startColumn: position.column - 1,
+                            endLineNumber: position.lineNumber,
+                            endColumn: position.column
+                        });
+                    }
+
+                    // If the current word is "Person" or a prefix of it, suggest "Person"
+                    // Only suggest "Person" if the character before the cursor is NOT a dot
+                    if ('person'.startsWith(word.word.toLowerCase()) && word.word.length > 0 && charBeforeCursor !== '.') {
+                        console.log('Suggesting "Person" (initial)');
+                        return {
+                            suggestions: [{
+                                label: 'Person',
+                                kind: monaco.languages.CompletionItemKind.Variable,
+                                insertText: 'Person',
+                                range: range
+                            }],
+                            isIncomplete: true // Prevent other providers from interfering
+                        };
+                    }
+
+                    // Check if we should provide completions after a dot
+                    // This handles both cases: "Person." and "Person.Contact."
+                    var dotIndex = textUntilPosition.lastIndexOf('.');
+                    if (dotIndex !== -1) {
+                        // Extract everything before the dot
+                        var pathBeforeDot = textUntilPosition.substring(0, dotIndex);
+                        var words = pathBeforeDot.match(/([a-zA-Z0-9_]+(\.[a-zA-Z0-9_]+)*)$/);
+                        if (words && words[1]) {
+                            var currentPrefix = words[1];
+                            var parts = currentPrefix.split('.');
+
+                            if (parts[0] !== 'Person') {
+                                console.log('Prefix is not "Person", returning empty suggestions.');
+                                return { suggestions: [] };
+                            }
+
+                            var currentObject = person;
+                            var navigationPath = []; // Track the path we've navigated
+                            for (var i = 1; i < parts.length; i++) {
+                                navigationPath.push(parts[i]);
+                                if (currentObject && typeof currentObject === 'object' && currentObject.hasOwnProperty(parts[i])) {
+                                    currentObject = currentObject[parts[i]];
+                                } else {
+                                    console.log('Path not found, returning empty suggestions.');
+                                    return { suggestions: [] };
+                                }
+                            }
+                            var suggestions = Object.keys(currentObject)
+                                .filter(function(key) {
+                                    // Exclude ALL parts of the navigation path to avoid circular suggestions
+                                    // This includes "Person" and any intermediate path components
+                                    var allPathParts = ['Person'].concat(navigationPath);
+                                    
+                                    for (var i = 0; i < allPathParts.length; i++) {
+                                        if (key === allPathParts[i]) {
+                                            return false;
+                                        }
+                                    }
+                                    return true;
+                                })
+                                .map(function(key) {
+                                var kind = typeof currentObject[key] === 'object'
+                                    ? monaco.languages.CompletionItemKind.Module
+                                    : monaco.languages.CompletionItemKind.Property;
+                                return {
+                                    label: key,
+                                    kind: kind,
+                                    insertText: key
+                                };
+                            });
+                            return { 
+                                suggestions: suggestions, 
+                                isIncomplete: true // Prevent other providers from interfering
+                            };
+                        }
+                    }
+
+                    // If we have a dot in the text, we should handle it completely 
+                    // to prevent default JavaScript completion from showing
+                    if (textUntilPosition.indexOf('.') !== -1) {
+                        console.log('Found dot in text but no valid Person path, returning empty suggestions.');
+                        return { 
+                            suggestions: [], 
+                            isIncomplete: true // This prevents other completion providers from being triggered
+                        };
+                    }
+
+                    // For any text that might be starting with "Person" or contains Person-related content,
+                    // we want to completely override the default JavaScript completion
+                    if (textUntilPosition.toLowerCase().indexOf('person') !== -1) {
+                        console.log('Found Person-related text, overriding default completion.');
+                        return { 
+                            suggestions: [], 
+                            isIncomplete: true // This prevents other completion providers from being triggered
+                        };
+                    }
+
+                    console.log('No suggestions found (final check).'); // Modified log
+                    return { suggestions: [] };
+                }
+            });
+            
+            // Add basic JavaScript language completion for common objects and methods
+            monaco.languages.registerCompletionItemProvider('javascript', {
+                provideCompletionItems: function(model, position) {
+                    var textUntilPosition = model.getValueInRange({
+                        startLineNumber: 1,
+                        startColumn: 1,
+                        endLineNumber: position.lineNumber,
+                        endColumn: position.column
+                    });
+                    
+                    // Only provide JavaScript completions when NOT dealing with Person objects
+                    if (textUntilPosition.toLowerCase().indexOf('person') !== -1) {
+                        return { suggestions: [] };
+                    }
+                    
+                    var word = model.getWordUntilPosition(position);
+                    var range = {
+                        startLineNumber: position.lineNumber,
+                        endLineNumber: position.lineNumber,
+                        startColumn: word.startColumn,
+                        endColumn: word.endColumn
+                    };
+                    
+                    var basicJavaScript = [
+                        { label: 'console', kind: monaco.languages.CompletionItemKind.Module, insertText: 'console' },
+                        { label: 'log', kind: monaco.languages.CompletionItemKind.Method, insertText: 'log' },
+                        { label: 'Math', kind: monaco.languages.CompletionItemKind.Module, insertText: 'Math' },
+                        { label: 'Date', kind: monaco.languages.CompletionItemKind.Class, insertText: 'Date' },
+                        { label: 'String', kind: monaco.languages.CompletionItemKind.Class, insertText: 'String' },
+                        { label: 'Number', kind: monaco.languages.CompletionItemKind.Class, insertText: 'Number' },
+                        { label: 'Object', kind: monaco.languages.CompletionItemKind.Class, insertText: 'Object' },
+                        { label: 'Array', kind: monaco.languages.CompletionItemKind.Class, insertText: 'Array' },
+                        { label: 'JSON', kind: monaco.languages.CompletionItemKind.Module, insertText: 'JSON' }
+                    ];
+                    
+                    return {
+                        suggestions: basicJavaScript.map(function(item) {
+                            return Object.assign(item, { range: range });
+                        })
+                    };
+                }
+            });
+        }
+
+        runButton.addEventListener('click', function() {
+            if (!vaultData) {
+                alert('Please load a vault.json file first');
+                return;
+            }
+            var personIndex = personIndexInput.value;
+            if (!personIndex || isNaN(personIndex) || !vaultData.Persons[personIndex]) {
+                output.value = 'Please select a person.';
+                return;
+            }
+            var Person = vaultData.Persons[personIndex];
+            var code = editor.getValue();
+            var logs = [];
+            var customConsole = {
+                log: function(message) {
+                    logs.push(JSON.stringify(message, null, 2));
+                }
+            };
+
+            try {
+                var fn = new Function('Person', 'console', code);
+                var result = fn(Person, customConsole);
+                if (result === undefined) {
+                    output.value = logs.join('\n');
+                } else {
+                    if (typeof result === 'string') {
+                        output.value = result;
+                    } else {
+                        output.value = JSON.stringify(result, null, 2);
+                    }
+                }
+            } catch (e) {
+                output.value = 'Error: ' + e.message;
+            }
+        });
+
+        showJsonButton.addEventListener('click', function() {
+            if (!vaultData) {
+                alert('Please load a vault.json file first');
+                return;
+            }
+            var personIndex = personIndexInput.value;
+            if (!personIndex || isNaN(personIndex) || !vaultData.Persons[personIndex]) {
+                alert('Please select a person.');
+                return;
+            }
+            var person = vaultData.Persons[personIndex];
+            jsonOutput.textContent = JSON.stringify(person, null, 2);
+            jsonModal.classList.remove('hidden');
+        });
+
+        closeButton.addEventListener('click', function() {
+            jsonModal.classList.add('hidden');
+        });
+
+        jsonModal.addEventListener('click', function(e) {
+            if (e.target === jsonModal) {
+                jsonModal.classList.add('hidden');
+            }
+        });
+
+        clearOutputButton.addEventListener('click', function() {
+            output.value = '';
+        });
+
+
+    </script>
+</body>
+</html>
