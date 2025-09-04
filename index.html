@@ -726,10 +726,10 @@
                     // Select first item in dropdown
                     if (vaultData.Persons.length > 0) {
                         setTimeout(function() {
-                            var personIndex = 0;
-                            window.Person = vaultData.Persons[personIndex];
-                            updateIntelliSense();
-                            personDropdown.textContent = vaultData.Persons[personIndex].DisplayName;
+                            var person = vaultData.Persons[0];
+                            personSearch.value = person.DisplayName;
+                            personIndexInput.value = 0;
+                            setupCodeCompletion(person);
                             isSelected = true;
                             clearSearchButton.classList.remove('hidden');
                             enableButtons(true);
