@@ -6,6 +6,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.33.0/min/vs/loader.js"></script>
     <script>
         tailwind.config = {
@@ -98,6 +99,14 @@
                         </svg>
                         <span class="text-xs">JSON</span>
                     </button>
+                    
+                    <!-- Clear Data Button -->
+                    <button id="clear-data-button" class="bg-gradient-to-r from-red-500 to-red-600 text-white font-medium px-4 py-2 rounded-lg shadow flex items-center space-x-1 transition-colors hover:from-red-600 hover:to-red-700">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                        </svg>
+                        <span class="text-xs">Clear Data</span>
+                    </button>
                 </div>
                 
                 <!-- Right: Empty spacer -->
@@ -164,27 +173,35 @@
             <div class="fixed inset-0 transition-opacity backdrop-blur-sm" aria-hidden="true">
                 <div class="absolute inset-0 bg-gray-900/50"></div>
             </div>
-            <div class="relative inline-block bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-4 sm:max-w-5xl sm:w-full h-[85vh] flex flex-col">
+            <div class="relative inline-block bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-4 sm:max-w-5xl sm:w-full h-[90vh] flex flex-col">
                 <div class="bg-gradient-to-r from-blue-50 to-indigo-50 px-6 py-4 border-b border-gray-200/50">
                     <div class="flex items-center justify-between">
                         <div class="flex items-center space-x-3">
                             <div class="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center">
                                 <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
                                 </svg>
                             </div>
-                            <h3 class="text-xl font-bold text-gray-900" id="modal-title">Employee Data (JSON)</h3>
+                            <h3 class="text-xl font-bold text-gray-900" id="modal-title">Edit Employee Data</h3>
                         </div>
-                        <button type="button" id="close-button" class="group bg-red-500 hover:bg-red-600 text-white rounded-lg p-2 transition-all duration-200 transform hover:scale-105">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                            </svg>
-                        </button>
+                        <div class="flex items-center space-x-2">
+                            <button type="button" id="save-json-button" class="bg-gradient-to-r from-emerald-500 to-green-600 text-white font-medium px-4 py-2 rounded-lg shadow flex items-center space-x-2 transition-all duration-200">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                <span>Save</span>
+                            </button>
+                            <button type="button" id="close-button" class="group bg-red-500 hover:bg-red-600 text-white rounded-lg p-2 transition-all duration-200 transform hover:scale-105">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                </svg>
+                            </button>
+                        </div>
                     </div>
                 </div>
-                <div class="flex-1 p-6">
-                    <div class="h-full bg-gray-50 rounded-xl border-2 border-gray-200">
-                        <textarea id="json-output" readonly class="w-full h-full text-sm text-gray-700 bg-transparent border-none focus:outline-none resize-none font-mono p-4 leading-relaxed"></textarea>
+                <div class="flex-1 p-6 overflow-hidden">
+                    <div class="h-full bg-gray-50 rounded-xl border-2 border-gray-200 overflow-auto">
+                        <div id="json-editor" class="p-4 font-mono text-sm leading-relaxed overflow-y-auto max-h-full"></div>
                     </div>
                 </div>
             </div>
@@ -195,6 +212,115 @@
         // WARNING: This playground executes arbitrary JavaScript using new Function. Do not use with untrusted code!
 
         var vaultData;
+        var sessionKey; // Encryption key for session
+        
+        // Security: Encryption utilities
+        function generateSessionKey() {
+            sessionKey = CryptoJS.lib.WordArray.random(256/8).toString();
+            return sessionKey;
+        }
+        
+        function encryptData(data) {
+            if (!sessionKey) {
+                generateSessionKey();
+            }
+            const jsonString = JSON.stringify(data);
+            const encrypted = CryptoJS.AES.encrypt(jsonString, sessionKey).toString();
+            return encrypted;
+        }
+        
+        function decryptData(encryptedData) {
+            if (!sessionKey || !encryptedData) {
+                return null;
+            }
+            try {
+                const decrypted = CryptoJS.AES.decrypt(encryptedData, sessionKey);
+                const jsonString = decrypted.toString(CryptoJS.enc.Utf8);
+                return JSON.parse(jsonString);
+            } catch (e) {
+                console.error('Failed to decrypt data:', e);
+                return null;
+            }
+        }
+        
+        // Secure session storage functions
+        function setSecureSessionData(key, data) {
+            const encrypted = encryptData(data);
+            sessionStorage.setItem(key, encrypted);
+        }
+        
+        function getSecureSessionData(key) {
+            const encrypted = sessionStorage.getItem(key);
+            return decryptData(encrypted);
+        }
+        
+        function clearSecureSession() {
+            // Clear all session storage
+            sessionStorage.clear();
+            // Clear encryption key
+            sessionKey = null;
+        }
+        
+        // Security: Memory clearing functions
+        function clearSensitiveData() {
+            if (vaultData) {
+                // Recursive function to clear objects
+                function deepClear(obj) {
+                    if (typeof obj === 'object' && obj !== null) {
+                        for (let key in obj) {
+                            if (obj.hasOwnProperty(key)) {
+                                if (typeof obj[key] === 'object') {
+                                    deepClear(obj[key]);
+                                }
+                                obj[key] = null;
+                            }
+                        }
+                    }
+                }
+                
+                deepClear(vaultData);
+                vaultData = null;
+            }
+            
+            // Clear Person object
+            if (window.Person) {
+                window.Person = null;
+            }
+            
+            // Clear Monaco editor content
+            if (editor) {
+                editor.setValue('');
+            }
+            
+            // Clear output
+            document.getElementById('output').innerHTML = '';
+            
+            // Clear dropdown
+            const dropdown = document.getElementById('personDropdown');
+            if (dropdown) {
+                dropdown.innerHTML = '<option value="">Select a person...</option>';
+            }
+            
+            // Clear encrypted session storage
+            clearSecureSession();
+            
+            // Force garbage collection if available
+            if (window.gc) {
+                window.gc();
+            }
+        }
+        
+        // Auto-clear on page unload
+        window.addEventListener('beforeunload', function(e) {
+            clearSensitiveData();
+        });
+        
+        // Auto-clear on page hide (mobile/tab switching)
+        document.addEventListener('visibilitychange', function() {
+            if (document.hidden) {
+                clearSensitiveData();
+            }
+        });
         var editor;
         var completionProvider;
         var isSelected = false;
@@ -215,8 +341,11 @@
         var showJsonButton = document.getElementById('show-json-button');
         var jsonModal = document.getElementById('json-modal');
         var closeButton = document.getElementById('close-button');
-        var jsonOutput = document.getElementById('json-output');
+        var saveJsonButton = document.getElementById('save-json-button');
+        var jsonEditor = document.getElementById('json-editor');
         var clearOutputButton = document.getElementById('clear-output-button');
+        var clearDataButton = document.getElementById('clear-data-button');
+        var currentEditingPerson = null;
 
         function enableButtons(enabled) {
             runButton.disabled = !enabled;
@@ -266,7 +395,19 @@
                 }
             });
 
-            // Automatically load vault.json content
+            // Check for existing encrypted data in session storage first
+            var storedVaultData = getSecureSessionData('vaultData');
+            if (storedVaultData) {
+                vaultData = storedVaultData;
+                vaultData.Persons.sort(function(a, b) {
+                    return a.DisplayName.localeCompare(b.DisplayName);
+                });
+                populatePersonOptions();
+                enableButtons(true);
+                return;
+            }
+            
+            // Automatically load vault.json content if not in session storage
             vaultData = JSON.parse(`{
   "Persons": [
     {
@@ -531,8 +672,36 @@
             vaultData.Persons.sort(function(a, b) {
                 return a.DisplayName.localeCompare(b.DisplayName);
             });
+            // Store encrypted data in session storage on initial load
+            setSecureSessionData('vaultData', vaultData);
             populatePersonOptions();
         });
+
+        // Function to show temporary notification with custom duration
+        function showTimedNotification(message, duration) {
+            // Get the Load button position
+            var loadButton = document.getElementById('load-button');
+            var rect = loadButton.getBoundingClientRect();
+            
+            // Create notification element
+            var notification = document.createElement('div');
+            notification.className = 'fixed bg-blue-500 text-white px-4 py-2 rounded-lg shadow-lg z-50 flex items-center space-x-2 text-sm';
+            notification.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg><span>' + message + '</span>';
+            
+            // Position under the button
+            notification.style.left = rect.left + 'px';
+            notification.style.top = (rect.bottom + 8) + 'px';
+            
+            // Add to document
+            document.body.appendChild(notification);
+            
+            // Auto remove after specified duration
+            setTimeout(function() {
+                if (notification.parentNode) {
+                    notification.parentNode.removeChild(notification);
+                }
+            }, duration);
+        }
 
         loadButton.addEventListener('click', function() {
             if (fileInput.files.length === 0) {
@@ -547,7 +716,25 @@
                     vaultData.Persons.sort(function(a, b) {
                         return a.DisplayName.localeCompare(b.DisplayName);
                     });
+                    // Store encrypted data in session storage
+                    setSecureSessionData('vaultData', vaultData);
                     populatePersonOptions();
+                    
+                    // Show notification that file is loaded
+                    showTimedNotification(file.name + ' is loaded', 2000);
+                    
+                    // Select first item in dropdown
+                    if (vaultData.Persons.length > 0) {
+                        setTimeout(function() {
+                            var personIndex = 0;
+                            window.Person = vaultData.Persons[personIndex];
+                            updateIntelliSense();
+                            personDropdown.textContent = vaultData.Persons[personIndex].DisplayName;
+                            isSelected = true;
+                            clearSearchButton.classList.remove('hidden');
+                            enableButtons(true);
+                        }, 100);
+                    }
                 } catch (err) {
                     alert('Error parsing JSON file: ' + err.message);
                 }
@@ -870,6 +1057,93 @@
             }
         });
 
+        // Function to create editable JSON structure
+        function createEditableJson(obj, path) {
+            path = path || '';
+            var html = '';
+            var indent = '  '.repeat(path.split('.').length - 1);
+            
+            if (typeof obj === 'object' && obj !== null && !Array.isArray(obj)) {
+                html += indent + '{\n';
+                var keys = Object.keys(obj);
+                keys.forEach(function(key, index) {
+                    var currentPath = path ? path + '.' + key : key;
+                    html += indent + '  "' + key + '": ';
+                    
+                    if (typeof obj[key] === 'object' && obj[key] !== null && !Array.isArray(obj[key])) {
+                        html += '\n' + createEditableJson(obj[key], currentPath) + '\n';
+                    } else if (Array.isArray(obj[key])) {
+                        html += '[\n';
+                        obj[key].forEach(function(item, arrIndex) {
+                            var arrayPath = currentPath + '[' + arrIndex + ']';
+                            if (typeof item === 'object' && item !== null) {
+                                html += createEditableJson(item, arrayPath);
+                            } else {
+                                html += indent + '    <input type="text" class="json-input bg-transparent border-b border-gray-300 focus:border-blue-500 focus:outline-none px-1" data-path="' + arrayPath + '" value="' + (item || '').toString().replace(/"/g, '&quot;') + '" style="min-width: 400px;">';
+                            }
+                            if (arrIndex < obj[key].length - 1) html += ',';
+                            html += '\n';
+                        });
+                        html += indent + '  ]';
+                    } else {
+                        var value = obj[key];
+                        if (typeof value === 'string') {
+                            value = '"' + value.replace(/"/g, '\\"') + '"';
+                        }
+                        html += '<input type="text" class="json-input bg-transparent border-b border-gray-300 focus:border-blue-500 focus:outline-none px-1" data-path="' + currentPath + '" value="' + (value || '').toString().replace(/"/g, '&quot;') + '" style="min-width: 400px;">';
+                    }
+                    if (index < keys.length - 1) html += ',';
+                    html += '\n';
+                });
+                html += indent + '}';
+            }
+            
+            return html;
+        }
+
+        // Function to collect values from inputs and rebuild JSON
+        function collectJsonValues() {
+            var inputs = jsonEditor.querySelectorAll('.json-input');
+            var result = JSON.parse(JSON.stringify(currentEditingPerson)); // Deep copy
+            
+            inputs.forEach(function(input) {
+                var path = input.getAttribute('data-path');
+                var value = input.value.trim();
+                
+                // Parse the value
+                var parsedValue;
+                if (value.startsWith('"') && value.endsWith('"')) {
+                    // String value
+                    parsedValue = value.slice(1, -1);
+                } else if (value === 'true' || value === 'false') {
+                    // Boolean value
+                    parsedValue = value === 'true';
+                } else if (!isNaN(value) && value !== '') {
+                    // Number value
+                    parsedValue = parseFloat(value);
+                } else if (value === 'null') {
+                    // Null value
+                    parsedValue = null;
+                } else {
+                    // Default to string
+                    parsedValue = value;
+                }
+                
+                // Set the value in the result object
+                var pathParts = path.split('.');
+                var current = result;
+                for (var i = 0; i < pathParts.length - 1; i++) {
+                    if (!current[pathParts[i]]) {
+                        current[pathParts[i]] = {};
+                    }
+                    current = current[pathParts[i]];
+                }
+                current[pathParts[pathParts.length - 1]] = parsedValue;
+            });
+            
+            return result;
+        }
+
         showJsonButton.addEventListener('click', function() {
             if (!vaultData) {
                 alert('Please load a vault.json file first');
@@ -881,8 +1155,47 @@
                 return;
             }
             var person = vaultData.Persons[personIndex];
-            jsonOutput.textContent = JSON.stringify(person, null, 2);
+            currentEditingPerson = JSON.parse(JSON.stringify(person)); // Deep copy for editing
+            
+            // Generate editable JSON HTML
+            var editableHtml = createEditableJson(person);
+            jsonEditor.innerHTML = '<pre class="whitespace-pre-wrap">' + editableHtml + '</pre>';
+            
+            // Style the inputs
+            var inputs = jsonEditor.querySelectorAll('.json-input');
+            inputs.forEach(function(input) {
+                // Auto-resize input based on content
+                input.style.width = Math.max(input.value.length * 8, 100) + 'px';
+                
+                // Add event listener to auto-resize on input
+                input.addEventListener('input', function() {
+                    this.style.width = Math.max(this.value.length * 8, 100) + 'px';
+                });
+            });
+            
             jsonModal.classList.remove('hidden');
+        });
+
+        saveJsonButton.addEventListener('click', function() {
+            try {
+                var updatedPerson = collectJsonValues();
+                var personIndex = personIndexInput.value;
+                
+                // Update the person in vaultData
+                vaultData.Persons[personIndex] = updatedPerson;
+                
+                // Refresh the completion provider with updated data
+                setupCodeCompletion(updatedPerson);
+                
+                // Close modal
+                jsonModal.classList.add('hidden');
+                
+                // Show success message
+                output.value = 'Person data updated successfully!';
+                
+            } catch (error) {
+                alert('Error saving changes: ' + error.message);
+            }
         });
 
         closeButton.addEventListener('click', function() {
@@ -897,6 +1210,38 @@
 
         clearOutputButton.addEventListener('click', function() {
             output.value = '';
+        });
+        
+        // Function to show temporary notification
+        function showNotification(message) {
+            // Get the Clear Data button position
+            var clearButton = document.getElementById('clear-data-button');
+            var rect = clearButton.getBoundingClientRect();
+            
+            // Create notification element
+            var notification = document.createElement('div');
+            notification.className = 'fixed bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg z-50 flex items-center space-x-2 text-sm';
+            notification.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg><span>' + message + '</span>';
+            
+            // Position under the button
+            notification.style.left = rect.left + 'px';
+            notification.style.top = (rect.bottom + 8) + 'px';
+            
+            // Add to document
+            document.body.appendChild(notification);
+            
+            // Auto remove after 5 seconds
+            setTimeout(function() {
+                if (notification.parentNode) {
+                    notification.parentNode.removeChild(notification);
+                }
+            }, 5000);
+        }
+        
+        // Clear Data button event listener
+        clearDataButton.addEventListener('click', function() {
+            clearSensitiveData();
+            showNotification('All sensitive data has been cleared from memory.');
         });
 
 
